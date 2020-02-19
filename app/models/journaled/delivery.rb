@@ -80,6 +80,6 @@ class Journaled::Delivery
     )
   end
 
-  class KinesisTemporaryFailure < NotTrulyExceptionalError
+  class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
   end
 end
