@@ -1,9 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Journaled::Client do
-  subject { described_class.new }
-
-  describe "#kinesis_client config" do
+  describe ".generate" do
     context 'when JOURNALED_IAM_ROLE_ARN is defined' do
       let(:aws_sts_client) { Aws::STS::Client.new(stub_responses: true) }
 
@@ -19,7 +17,7 @@ RSpec.describe Journaled::Client do
       end
 
       it 'initializes a Kinesis client and assumes the provided role' do
-        subject.kinesis_client
+        described_class.generate
 
         expect(Aws::AssumeRoleCredentials).to have_received(:new).with(
           client: aws_sts_client,
@@ -31,7 +29,7 @@ RSpec.describe Journaled::Client do
     end
 
     describe 'config' do
-      let(:config) { subject.kinesis_client.config }
+      let(:config) { described_class.generate.config }
 
       it "is in us-east-1 by default" do
         with_env(AWS_DEFAULT_REGION: nil) do

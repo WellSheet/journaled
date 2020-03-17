@@ -14,12 +14,10 @@ RSpec.describe Journaled::Delivery do
 
   describe '#perform' do
     let(:return_status_body) { { shard_id: '101', sequence_number: '101123' } }
-    let(:return_object) { instance_double Aws::Kinesis::Types::PutRecordOutput, return_status_body }
 
     before do
-      allow(Aws::AssumeRoleCredentials).to receive(:new).and_call_original
-      allow(Aws::Kinesis::Client).to receive(:new).and_return kinesis_client
       kinesis_client.stub_responses(:put_record, return_status_body)
+      allow(Journaled::Client).to receive(:generate).and_return kinesis_client
 
       allow(Journaled).to receive(:enabled?).and_return(true)
     end

@@ -33,7 +33,7 @@ class Journaled::Delivery
   end
 
   def kinesis_client
-    Journaled::Client.new.kinesis_client
+    Journaled::Client.generate
   end
 
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
