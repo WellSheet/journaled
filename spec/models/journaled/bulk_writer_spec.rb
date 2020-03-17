@@ -1,7 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Journaled::BulkWriter do
-  subject { described_class.new journaled_events: [journaled_event], app_name: "my_app" }
+  let(:enqueue_opts) { {} }
+  subject { described_class.new journaled_events: [journaled_event], app_name: "my_app", enqueue_opts: enqueue_opts }
 
   describe '#initialize' do
     context 'when the Journaled Event does not implement all the necessary methods' do
@@ -127,8 +128,8 @@ RSpec.describe Journaled::BulkWriter do
           end
         end
 
-        xcontext 'when there is a job priority specified in the enqueue opts' do
-          let(:journaled_enqueue_opts) { { priority: 13 } }
+        context 'when there is a job priority specified in the enqueue opts' do
+          let(:enqueue_opts) { { priority: 13 } }
 
           it 'enqueues a Journaled::Delivery object with the given priority' do
             expect { subject.journal! }.to change {

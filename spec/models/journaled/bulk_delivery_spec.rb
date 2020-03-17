@@ -10,7 +10,7 @@ RSpec.describe Journaled::BulkDelivery do
     with_env(JOURNALED_STREAM_NAME: stream_name) { example.run }
   end
 
-  subject { described_class.new serialized_events: [serialized_event], partition_key: partition_key, app_name: nil }
+  subject { described_class.new serialized_events: [serialized_event], partition_keys: [partition_key], app_name: nil }
 
   describe '#perform' do
     let(:return_status_body) { { records: [{ shard_id: '101', sequence_number: '101123' }] } }
@@ -97,7 +97,7 @@ RSpec.describe Journaled::BulkDelivery do
 
   describe "#stream_name" do
     context "when app_name is unspecified" do
-      subject { described_class.new serialized_events: [serialized_event], partition_key: partition_key, app_name: nil }
+      subject { described_class.new serialized_events: [serialized_event], partition_keys: [partition_key], app_name: nil }
 
       it "is fetched from a prefixed ENV var if specified" do
         allow(ENV).to receive(:fetch).and_return("expected_stream_name")
@@ -107,7 +107,7 @@ RSpec.describe Journaled::BulkDelivery do
     end
 
     context "when app_name is specified" do
-      subject { described_class.new serialized_events: [serialized_event], partition_key: partition_key, app_name: "my_funky_app_name" }
+      subject { described_class.new serialized_events: [serialized_event], partition_keys: [partition_key], app_name: "my_funky_app_name" }
 
       it "is fetched from a prefixed ENV var if specified" do
         allow(ENV).to receive(:fetch).and_return("expected_stream_name")

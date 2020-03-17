@@ -6,7 +6,7 @@ class Journaled::BulkWriter
       Journaled::Validator.new(journaled_event: event).validate_required_methods!
     end
 
-    @journaled_events = journaled_events
+    @journaled_events = journaled_events.lazy
     @app_name = app_name
     @enqueue_opts = enqueue_opts
   end
