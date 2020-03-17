@@ -31,44 +31,6 @@ RSpec.describe Journaled::Delivery do
       expect(event.sequence_number).to eq '101123'
     end
 
-    context 'when JOURNALED_IAM_ROLE_ARN is defined' do
-      let(:aws_sts_client) { Aws::STS::Client.new(stub_responses: true) }
-
-      around do |example|
-        with_env(JOURNALED_IAM_ROLE_ARN: 'iam-role-arn-for-assuming-kinesis-access') { example.run }
-      end
-
-      before do
-        allow(Aws::STS::Client).to receive(:new).and_return aws_sts_client
-        aws_sts_client.stub_responses(:assume_role, assume_role_response)
-      end
-
-      let(:assume_role_response) do
-        {
-          assumed_role_user: {
-            arn: 'iam-role-arn-for-assuming-kinesis-access',
-            assumed_role_id: "ARO123EXAMPLE123:Bob",
-          },
-          credentials: {
-            access_key_id: "AKIAIOSFODNN7EXAMPLE",
-            secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY",
-            session_token: "EXAMPLEtc764bNrC9SAPBSM22wDOk4x4HIZ8j4FZTwdQWLWsKWHGBuFqwAeMicRXmxfpSPfIeoIYRqTflfKD8YUuwthAx7mSEI",
-            expiration: Time.zone.parse("2011-07-15T23:28:33.359Z"),
-          },
-        }
-      end
-
-      it 'initializes a Kinesis client with assume role credentials' do
-        subject.perform
-
-        expect(Aws::AssumeRoleCredentials).to have_received(:new).with(
-          client: aws_sts_client,
-          role_arn: "iam-role-arn-for-assuming-kinesis-access",
-          role_session_name: "JournaledAssumeRoleAccess",
-        )
-      end
-    end
-
     context 'when the stream name env var is NOT set' do
       let(:stream_name) { nil }
 
@@ -152,37 +114,6 @@ RSpec.describe Journaled::Delivery do
         allow(ENV).to receive(:fetch).and_return("expected_stream_name")
         expect(subject.stream_name).to eq("expected_stream_name")
         expect(ENV).to have_received(:fetch).with("MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME")
-      end
-    end
-  end
-
-  describe "#kinesis_client_config" do
-    it "is in us-east-1 by default" do
-      with_env(AWS_DEFAULT_REGION: nil) do
-        expect(subject.kinesis_client_config).to include(region: 'us-east-1')
-      end
-    end
-
-    it "respects AWS_DEFAULT_REGION env var" do
-      with_env(AWS_DEFAULT_REGION: 'us-west-2') do
-        expect(subject.kinesis_client_config).to include(region: 'us-west-2')
-      end
-    end
-
-    it "doesn't limit retry" do
-      expect(subject.kinesis_client_config).to include(retry_limit: 0)
-    end
-
-    it "provides no AWS credentials by default" do
-      with_env(RUBY_AWS_ACCESS_KEY_ID: nil, RUBY_AWS_SECRET_ACCESS_KEY: nil) do
-        expect(subject.kinesis_client_config).not_to have_key(:access_key_id)
-        expect(subject.kinesis_client_config).not_to have_key(:secret_access_key)
-      end
-    end
-
-    it "will use legacy credentials if specified" do
-      with_env(RUBY_AWS_ACCESS_KEY_ID: 'key_id', RUBY_AWS_SECRET_ACCESS_KEY: 'secret') do
-        expect(subject.kinesis_client_config).to include(access_key_id: 'key_id', secret_access_key: 'secret')
       end
     end
   end
