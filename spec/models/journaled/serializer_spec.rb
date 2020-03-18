@@ -26,7 +26,7 @@ RSpec.describe Journaled::Serializer do
 
   let(:journaled_enqueue_opts) { {} }
   let(:journaled_event) do
-    double(
+    double( # rubocop:disable RSpec/VerifiedDoubles
       journaled_schema_name: :fake_schema_name,
       journaled_attributes: journaled_event_attributes,
       journaled_partition_key: 'fake_partition_key',
@@ -52,7 +52,7 @@ RSpec.describe Journaled::Serializer do
 
     context 'when the Journaled Event returns non-present values for some of the required methods' do
       let(:journaled_event) do
-        double(
+        double( # rubocop:disable RSpec/VerifiedDoubles
           journaled_schema_name: nil,
           journaled_attributes: {},
           journaled_partition_key: '',
@@ -84,9 +84,9 @@ RSpec.describe Journaled::Serializer do
       end
 
       context 'when the specific json schema is also valid' do
-        let(:journaled_event_attributes) {
+        let(:journaled_event_attributes) do
           { id: 'FAKE_UUID', event_type: 'fake_event', created_at: Time.zone.parse('2020-03-18T17:55:00Z'), foo: :bar }
-        }
+        end
 
         it 'serialized the event correctly' do
           expect { subject.serialize! }

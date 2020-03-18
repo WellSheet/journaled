@@ -15,10 +15,20 @@ RSpec.describe Journaled::BulkWriter do
     subject { described_class.new journaled_events: journaled_events, app_name: "my_app", enqueue_opts: enqueue_opts }
 
     let(:stub_serializer_1) do
-      instance_double(Journaled::Serializer, serialize!: true, serialized_event: 'FAKE_SERIALIZED_EVENT_1', journaled_partition_key: 'key_1')
+      instance_double(
+        Journaled::Serializer,
+        serialize!: true,
+        serialized_event: 'FAKE_SERIALIZED_EVENT_1',
+        journaled_partition_key: 'key_1',
+      )
     end
     let(:stub_serializer_2) do
-      instance_double(Journaled::Serializer, serialize!: true, serialized_event: 'FAKE_SERIALIZED_EVENT_2', journaled_partition_key: 'key_2')
+      instance_double(
+        Journaled::Serializer,
+        serialize!: true,
+        serialized_event: 'FAKE_SERIALIZED_EVENT_2',
+        journaled_partition_key: 'key_2',
+      )
     end
     before do
       allow(Journaled::Serializer).to receive(:new).with(journaled_event: journaled_event_1).and_return(stub_serializer_1)
