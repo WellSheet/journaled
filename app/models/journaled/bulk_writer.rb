@@ -2,19 +2,13 @@ class Journaled::BulkWriter
   EVENTS_PER_DELIVERY = 500
 
   def initialize(journaled_events:, app_name:, enqueue_opts: {})
-    journaled_events.each do |event|
-      Journaled::Validator.new(journaled_event: event).validate_required_methods!
-    end
-
     @journaled_events = journaled_events.lazy
     @app_name = app_name
     @enqueue_opts = enqueue_opts
   end
 
   def journal!
-    journaled_events.each do |event|
-      Journaled::Validator.new(journaled_event: event).validate_serialized_event!
-    end
+    serializers.each(&:serialize!)
 
     enqueue_deliveries!
   end
@@ -24,11 +18,11 @@ class Journaled::BulkWriter
   attr_reader :journaled_events, :app_name, :enqueue_opts
 
   def enqueue_deliveries!
-    chunked_serialized_events.zip(chunked_partition_keys).each do |serialized_event_chunk, partition_key_chunk|
+    serializers.each_slice(EVENTS_PER_DELIVERY).each do |serializers|
       Journaled.enqueue!(
         Journaled::BulkDelivery.new(
-          serialized_events: serialized_event_chunk,
-          partition_keys: partition_key_chunk,
+          serialized_events: serializers.map(&:serialized_event),
+          partition_keys: serializers.map(&:journaled_partition_key),
           app_name: app_name,
         ),
         enqueue_opts,
@@ -36,21 +30,9 @@ class Journaled::BulkWriter
     end
   end
 
-  def chunked_serialized_events
-    serialized_events.each_slice(EVENTS_PER_DELIVERY)
-  end
-
-  def chunked_partition_keys
-    partition_keys.each_slice(EVENTS_PER_DELIVERY)
-  end
-
-  def serialized_events
-    journaled_events.map do |event|
-      event.journaled_attributes.to_json
+  def serializers
+    @serializers ||= journaled_events.map do |e|
+      Journaled::Serializer.new(journaled_event: e)
     end
-  end
-
-  def partition_keys
-    journaled_events.map(&:journaled_partition_key)
   end
 end

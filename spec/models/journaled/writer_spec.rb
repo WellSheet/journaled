@@ -3,48 +3,6 @@ require 'rails_helper'
 RSpec.describe Journaled::Writer do
   subject { described_class.new journaled_event: journaled_event }
 
-  describe '#initialize' do
-    context 'when the Journaled Event does not implement all the necessary methods' do
-      let(:journaled_event) { double }
-
-      it 'raises on initialization' do
-        expect { subject }.to raise_error RuntimeError, /An enqueued event must respond to/
-      end
-    end
-
-    context 'when the Journaled Event returns non-present values for some of the required methods' do
-      let(:journaled_event) do
-        double(
-          journaled_schema_name: nil,
-          journaled_attributes: {},
-          journaled_partition_key: '',
-          journaled_app_name: nil,
-          journaled_enqueue_opts: {},
-        )
-      end
-
-      it 'raises on initialization' do
-        expect { subject }.to raise_error RuntimeError, /An enqueued event must have a non-nil response to/
-      end
-    end
-
-    context 'when the Journaled Event complies with the API' do
-      let(:journaled_event) do
-        double(
-          journaled_schema_name: :fake_schema_name,
-          journaled_attributes: { foo: :bar },
-          journaled_partition_key: 'fake_partition_key',
-          journaled_app_name: nil,
-          journaled_enqueue_opts: {},
-        )
-      end
-
-      it 'does not raise on initialization' do
-        expect { subject }.not_to raise_error
-      end
-    end
-  end
-
   describe '#journal!' do
     let(:schema_path) { Journaled::Engine.root.join "journaled_schemas/fake_schema_name.json" }
     let(:schema_file_contents) do
@@ -82,6 +40,30 @@ RSpec.describe Journaled::Writer do
 
     around do |example|
       with_jobs_delayed { example.run }
+    end
+
+    context 'when the Journaled Event does not implement all the necessary methods' do
+      let(:journaled_event) { double }
+
+      it 'raises' do
+        expect { subject.journal! }.to raise_error RuntimeError, /An enqueued event must respond to/
+      end
+    end
+
+    context 'when the Journaled Event returns non-present values for some of the required methods' do
+      let(:journaled_event) do
+        double(
+          journaled_schema_name: nil,
+          journaled_attributes: {},
+          journaled_partition_key: '',
+          journaled_app_name: nil,
+          journaled_enqueue_opts: {},
+        )
+      end
+
+      it 'raises' do
+        expect { subject.journal! }.to raise_error RuntimeError, /An enqueued event must have a non-nil response to/
+      end
     end
 
     context 'when the journaled event does NOT comply with the base_event schema' do

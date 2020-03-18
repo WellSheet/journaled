@@ -6,29 +6,6 @@ RSpec.describe Journaled::BulkWriter do
   subject { described_class.new journaled_events: journaled_events, app_name: "my_app", enqueue_opts: enqueue_opts }
 
   describe '#initialize' do
-    context 'when the Journaled Event does not implement all the necessary methods' do
-      let(:journaled_event) { double }
-
-      it 'raises on initialization' do
-        expect { subject }.to raise_error RuntimeError, /An enqueued event must respond to/
-      end
-    end
-
-    context 'when the Journaled Event returns non-present values for some of the required methods' do
-      let(:journaled_event) do
-        double(
-          journaled_schema_name: nil,
-          journaled_attributes: {},
-          journaled_partition_key: '',
-          journaled_app_name: nil,
-          journaled_enqueue_opts: {},
-        )
-      end
-
-      it 'raises on initialization' do
-        expect { subject }.to raise_error RuntimeError, /An enqueued event must have a non-nil response to/
-      end
-    end
 
     context 'when the Journaled Event complies with the API' do
       let(:journaled_event) do
@@ -84,6 +61,30 @@ RSpec.describe Journaled::BulkWriter do
 
     around do |example|
       with_jobs_delayed { example.run }
+    end
+
+    context 'when the Journaled Event does not implement all the necessary methods' do
+      let(:journaled_event) { double }
+
+      it 'raises' do
+        expect { subject.journal! }.to raise_error RuntimeError, /An enqueued event must respond to/
+      end
+    end
+
+    context 'when the Journaled Event returns non-present values for some of the required methods' do
+      let(:journaled_event) do
+        double(
+          journaled_schema_name: nil,
+          journaled_attributes: {},
+          journaled_partition_key: '',
+          journaled_app_name: nil,
+          journaled_enqueue_opts: {},
+        )
+      end
+
+      it 'raises' do
+        expect { subject.journal! }.to raise_error RuntimeError, /An enqueued event must have a non-nil response to/
+      end
     end
 
     context 'when the journaled event does NOT comply with the base_event schema' do

@@ -1,4 +1,4 @@
-class Journaled::Validator
+class Journaled::Serializer
   REQUIRED_EVENT_METHOD_NAMES = %i(
     journaled_schema_name
     journaled_partition_key
@@ -7,9 +7,26 @@ class Journaled::Validator
     journaled_enqueue_opts
   ).freeze
 
+  attr_reader :serialized_event
+  delegate :journaled_partition_key, to: :journaled_event
+
   def initialize(journaled_event:)
     @journaled_event = journaled_event
   end
+
+  def serialize!
+    validate_required_methods!
+
+    serialized_event = journaled_attributes.to_json
+    validate_serialized_event!(serialized_event)
+
+    @serialized_event = serialized_event
+  end
+
+  private
+
+  attr_reader :journaled_event
+  delegate(*REQUIRED_EVENT_METHOD_NAMES, to: :journaled_event)
 
   def validate_required_methods!
     unless respond_to_all?(journaled_event, REQUIRED_EVENT_METHOD_NAMES)
@@ -28,18 +45,9 @@ class Journaled::Validator
     end
   end
 
-  def validate_serialized_event!
+  def validate_serialized_event!(serialized_event)
     base_event_json_schema_validator.validate! serialized_event
     json_schema_validator.validate! serialized_event
-  end
-
-  private
-
-  attr_reader :journaled_event
-  delegate(*REQUIRED_EVENT_METHOD_NAMES, to: :journaled_event)
-
-  def serialized_event
-    @serialized_event ||= journaled_attributes.to_json
   end
 
   def json_schema_validator
