@@ -2,7 +2,8 @@ require 'rails_helper'
 
 RSpec.describe Journaled::BulkWriter do
   let(:enqueue_opts) { {} }
-  subject { described_class.new journaled_events: [journaled_event], app_name: "my_app", enqueue_opts: enqueue_opts }
+  let(:journaled_events) { [journaled_event] }
+  subject { described_class.new journaled_events: journaled_events, app_name: "my_app", enqueue_opts: enqueue_opts }
 
   describe '#initialize' do
     context 'when the Journaled Event does not implement all the necessary methods' do
@@ -109,7 +110,10 @@ RSpec.describe Journaled::BulkWriter do
 
         it 'creates a delivery with the app name passed through' do
           allow(Journaled::BulkDelivery).to receive(:new).and_call_original
-          subject.journal!
+          expect { subject.journal! }.to change {
+            Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').count
+          }.from(0).to(1)
+
           expect(Journaled::BulkDelivery).to have_received(:new).with(hash_including(app_name: 'my_app'))
         end
 
@@ -135,6 +139,47 @@ RSpec.describe Journaled::BulkWriter do
             expect { subject.journal! }.to change {
               Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').where(priority: 13).count
             }.from(0).to(1)
+          end
+        end
+
+        context 'when multiple valid events are passed in' do
+          let(:journaled_event_attributes_2) { { id: 'FAKE_UUID_2', event_type: 'fake_event', created_at: Time.zone.now, foo: :bar } }
+          let(:journaled_event_2) do
+            double(
+              journaled_schema_name: :fake_schema_name,
+              journaled_attributes: journaled_event_attributes_2,
+              journaled_partition_key: 'fake_partition_key',
+              journaled_app_name: 'my_app',
+              journaled_enqueue_opts: journaled_enqueue_opts,
+            )
+          end
+
+          let(:journaled_events) { [journaled_event, journaled_event_2] }
+
+          it 'creates a delivery' do
+            allow(Journaled::BulkDelivery).to receive(:new).and_call_original
+            expect { subject.journal! }.to change {
+              Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').count
+            }.from(0).to(1)
+
+            expect(Journaled::BulkDelivery).to have_received(:new)
+              .with(hash_including(app_name: 'my_app'))
+          end
+
+          context 'when the number of events passed in exceeds EVENTS_PER_DELIVERY' do
+            before do
+              stub_const("#{described_class}::EVENTS_PER_DELIVERY", 1)
+            end
+
+            it 'creates multiple deliveries' do
+              allow(Journaled::BulkDelivery).to receive(:new).and_call_original
+              expect { subject.journal! }.to change {
+                Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').count
+              }.from(0).to(2)
+
+              expect(Journaled::BulkDelivery).to have_received(:new)
+                .with(hash_including(app_name: 'my_app')).twice
+            end
           end
         end
       end
