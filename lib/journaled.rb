@@ -5,6 +5,7 @@ require "request_store"
 
 require "journaled/engine"
 require 'journaled/enqueue'
+require 'journaled/stream_name.rb'
 
 module Journaled
   mattr_accessor :default_app_name

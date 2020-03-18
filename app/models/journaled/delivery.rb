@@ -15,18 +15,13 @@ class Journaled::Delivery
     raise KinesisTemporaryFailure
   end
 
-  def stream_name
-    env_var_name = [app_name&.upcase, 'JOURNALED_STREAM_NAME'].compact.join('_')
-    ENV.fetch(env_var_name)
-  end
-
   private
 
   attr_reader :serialized_event, :partition_key, :app_name
 
   def record
     {
-      stream_name: stream_name,
+      stream_name: Journaled.stream_name_for_app(app_name),
       data: serialized_event,
       partition_key: partition_key,
     }

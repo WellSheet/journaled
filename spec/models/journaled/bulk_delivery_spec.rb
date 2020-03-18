@@ -121,26 +121,4 @@ RSpec.describe Journaled::BulkDelivery do
       end
     end
   end
-
-  describe "#stream_name" do
-    context "when app_name is unspecified" do
-      subject { described_class.new serialized_events: serialized_events, partition_keys: partition_keys, app_name: nil }
-
-      it "is fetched from a prefixed ENV var if specified" do
-        allow(ENV).to receive(:fetch).and_return("expected_stream_name")
-        expect(subject.stream_name).to eq("expected_stream_name")
-        expect(ENV).to have_received(:fetch).with("JOURNALED_STREAM_NAME")
-      end
-    end
-
-    context "when app_name is specified" do
-      subject { described_class.new serialized_events: serialized_events, partition_keys: partition_keys, app_name: "my_funky_app_name" }
-
-      it "is fetched from a prefixed ENV var if specified" do
-        allow(ENV).to receive(:fetch).and_return("expected_stream_name")
-        expect(subject.stream_name).to eq("expected_stream_name")
-        expect(ENV).to have_received(:fetch).with("MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME")
-      end
-    end
-  end
 end

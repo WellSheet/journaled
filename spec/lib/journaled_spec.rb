@@ -49,4 +49,20 @@ RSpec.describe Journaled do
       expect(described_class.actor_uri).to eq "my actor uri"
     end
   end
+
+  describe '.stream_name_for_app' do
+    before do
+      allow(ENV).to receive(:fetch).and_return("expected_stream_name")
+    end
+
+    it "is fetched from a prefixed ENV var if specified when app_name is unspecified" do
+      expect(described_class.stream_name_for_app(nil)).to eq("expected_stream_name")
+      expect(ENV).to have_received(:fetch).with("JOURNALED_STREAM_NAME")
+    end
+
+    it "is fetched from a prefixed ENV var if specified when app_name is specified" do
+      expect(described_class.stream_name_for_app("my_funky_app_name")).to eq("expected_stream_name")
+      expect(ENV).to have_received(:fetch).with("MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME")
+    end
+  end
 end

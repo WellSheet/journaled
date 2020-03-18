@@ -17,11 +17,6 @@ class Journaled::BulkDelivery
     raise KinesisTemporaryFailure
   end
 
-  def stream_name
-    env_var_name = [app_name&.upcase, 'JOURNALED_STREAM_NAME'].compact.join('_')
-    ENV.fetch(env_var_name)
-  end
-
   private
 
   attr_reader :serialized_events, :partition_keys, :app_name
@@ -37,7 +32,7 @@ class Journaled::BulkDelivery
 
   def request
     {
-      stream_name: stream_name,
+      stream_name: Journaled.stream_name_for_app(app_name),
       records: records,
     }
   end
