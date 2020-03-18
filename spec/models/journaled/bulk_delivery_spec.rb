@@ -14,7 +14,13 @@ RSpec.describe Journaled::BulkDelivery do
 
   let(:serialized_events) { [serialized_event_1, serialized_event_2] }
   let(:partition_keys) { [partition_key_1, partition_key_2] }
-  subject { described_class.new serialized_events: serialized_events, partition_keys: partition_keys, app_name: nil }
+  let(:records) do
+    [
+      [serialized_event_1, partition_key_1],
+      [serialized_event_2, partition_key_2],
+    ]
+  end
+  subject { described_class.new records: records, app_name: nil }
 
   describe '#perform' do
     let(:return_status_body) do

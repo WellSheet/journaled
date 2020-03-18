@@ -1,7 +1,6 @@
 class Journaled::BulkDelivery
-  def initialize(serialized_events:, partition_keys:, app_name:)
-    @serialized_events = serialized_events
-    @partition_keys = partition_keys
+  def initialize(records:, app_name:)
+    @records = records
     @app_name = app_name
   end
 
@@ -19,10 +18,10 @@ class Journaled::BulkDelivery
 
   private
 
-  attr_reader :serialized_events, :partition_keys, :app_name
+  attr_reader :records, :app_name
 
-  def records
-    serialized_events.zip(partition_keys).map do |event, partition_key|
+  def aws_records
+    records.map do |event, partition_key|
       {
         data: event,
         partition_key: partition_key,
@@ -33,7 +32,7 @@ class Journaled::BulkDelivery
   def request
     {
       stream_name: Journaled.stream_name_for_app(app_name),
-      records: records,
+      records: aws_records,
     }
   end
 

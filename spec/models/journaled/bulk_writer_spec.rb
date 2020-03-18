@@ -61,8 +61,7 @@ RSpec.describe Journaled::BulkWriter do
         expect(Journaled::BulkDelivery).to have_received(:new)
           .with(
             app_name: 'my_app',
-            serialized_events: %w(FAKE_SERIALIZED_EVENT_1 FAKE_SERIALIZED_EVENT_2),
-            partition_keys: %w(key_1 key_2),
+            records: [%w(FAKE_SERIALIZED_EVENT_1 key_1), %w(FAKE_SERIALIZED_EVENT_2 key_2)],
         )
       end
 
@@ -80,9 +79,9 @@ RSpec.describe Journaled::BulkWriter do
           expect(Journaled::BulkDelivery).to have_received(:new)
             .with(hash_including(app_name: 'my_app')).twice
           expect(Journaled::BulkDelivery).to have_received(:new)
-            .with(app_name: 'my_app', serialized_events: %w(FAKE_SERIALIZED_EVENT_1), partition_keys: %w(key_1)).once
+            .with(app_name: 'my_app', records: [%w(FAKE_SERIALIZED_EVENT_1 key_1)]).once
           expect(Journaled::BulkDelivery).to have_received(:new)
-            .with(app_name: 'my_app', serialized_events: %w(FAKE_SERIALIZED_EVENT_2), partition_keys: %w(key_2)).once
+            .with(app_name: 'my_app', records: [%w(FAKE_SERIALIZED_EVENT_2 key_2)]).once
         end
       end
 
