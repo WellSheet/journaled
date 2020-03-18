@@ -6,7 +6,6 @@ RSpec.describe Journaled::BulkWriter do
   subject { described_class.new journaled_events: journaled_events, app_name: "my_app", enqueue_opts: enqueue_opts }
 
   describe '#initialize' do
-
     context 'when the Journaled Event complies with the API' do
       let(:journaled_event) do
         double(
