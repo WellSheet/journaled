@@ -90,7 +90,7 @@ RSpec.describe Journaled::BulkWriter do
 
       it 'raises an error and does not enqueue anything' do
         expect { subject.journal! }.to raise_error JSON::Schema::ValidationError
-        expect(Delayed::Job.where('handler like ?', '%Journaled::Delivery%').count).to eq 0
+        expect(Delayed::Job.where('handler like ?', '%Journaled%').count).to eq 0
       end
     end
 
@@ -100,7 +100,7 @@ RSpec.describe Journaled::BulkWriter do
 
         it 'raises an error and does not enqueue anything' do
           expect { subject.journal! }.to raise_error JSON::Schema::ValidationError
-          expect(Delayed::Job.where('handler like ?', '%Journaled::Delivery%').count).to eq 0
+          expect(Delayed::Job.where('handler like ?', '%Journaled%').count).to eq 0
         end
       end
 
