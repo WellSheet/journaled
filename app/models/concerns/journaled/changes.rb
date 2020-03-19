@@ -58,10 +58,10 @@ module Journaled::Changes
   class_methods do
     def journal_changes_to(*attribute_names, as:, enqueue_with: {}) # rubocop:disable Naming/UncommunicativeMethodParamName
       if attribute_names.empty? || attribute_names.any? { |n| !n.is_a?(Symbol) }
-        raise "one or more symbol attribute_name arguments is required"
+        raise 'one or more symbol attribute_name arguments is required'
       end
 
-      raise "as: must be a symbol" unless as.is_a?(Symbol)
+      raise 'as: must be a symbol' unless as.is_a?(Symbol)
 
       _journaled_change_definitions << Journaled::ChangeDefinition.new(attribute_names: attribute_names, logical_operation: as)
       journaled_attribute_names.concat(attribute_names)

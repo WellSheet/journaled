@@ -10,3 +10,6 @@ AllCops:
     - 'spec/dummy/db/**/*'
     - 'vendor/**/*'
     - 'gemfiles/vendor/**/*'
+
+Style/StringLiterals:
+  Enabled: true

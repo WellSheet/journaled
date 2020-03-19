@@ -46,7 +46,7 @@ RSpec.describe Journaled::Writer do
   end
 
   describe '#journal!' do
-    let(:schema_path) { Journaled::Engine.root.join "journaled_schemas/fake_schema_name.json" }
+    let(:schema_path) { Journaled::Engine.root.join 'journaled_schemas/fake_schema_name.json' }
     let(:schema_file_contents) do
       <<-JSON
           {

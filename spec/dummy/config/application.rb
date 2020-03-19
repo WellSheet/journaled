@@ -1,13 +1,13 @@
 require File.expand_path('boot', __dir__)
 
-require "active_record/railtie"
-require "active_model/railtie"
-require "action_controller/railtie"
-require "action_mailer/railtie"
-require "sprockets/railtie"
+require 'active_record/railtie'
+require 'active_model/railtie'
+require 'action_controller/railtie'
+require 'action_mailer/railtie'
+require 'sprockets/railtie'
 
 Bundler.require(*Rails.groups)
-require "journaled"
+require 'journaled'
 
 module Dummy
   class Application < Rails::Application

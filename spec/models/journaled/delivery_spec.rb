@@ -47,13 +47,13 @@ RSpec.describe Journaled::Delivery do
         {
           assumed_role_user: {
             arn: 'iam-role-arn-for-assuming-kinesis-access',
-            assumed_role_id: "ARO123EXAMPLE123:Bob",
+            assumed_role_id: 'ARO123EXAMPLE123:Bob',
           },
           credentials: {
-            access_key_id: "AKIAIOSFODNN7EXAMPLE",
-            secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY",
-            session_token: "EXAMPLEtc764bNrC9SAPBSM22wDOk4x4HIZ8j4FZTwdQWLWsKWHGBuFqwAeMicRXmxfpSPfIeoIYRqTflfKD8YUuwthAx7mSEI",
-            expiration: Time.zone.parse("2011-07-15T23:28:33.359Z"),
+            access_key_id: 'AKIAIOSFODNN7EXAMPLE',
+            secret_access_key: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYzEXAMPLEKEY',
+            session_token: 'EXAMPLEtc764bNrC9SAPBSM22wDOk4x4HIZ8j4FZTwdQWLWsKWHGBuFqwAeMicRXmxfpSPfIeoIYRqTflfKD8YUuwthAx7mSEI',
+            expiration: Time.zone.parse('2011-07-15T23:28:33.359Z'),
           },
         }
       end
@@ -63,8 +63,8 @@ RSpec.describe Journaled::Delivery do
 
         expect(Aws::AssumeRoleCredentials).to have_received(:new).with(
           client: aws_sts_client,
-          role_arn: "iam-role-arn-for-assuming-kinesis-access",
-          role_session_name: "JournaledAssumeRoleAccess",
+          role_arn: 'iam-role-arn-for-assuming-kinesis-access',
+          role_session_name: 'JournaledAssumeRoleAccess',
         )
       end
     end
@@ -83,7 +83,7 @@ RSpec.describe Journaled::Delivery do
       end
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
-        expect(Rails.logger).to receive(:error).with("Kinesis Error - Server Error occurred - Aws::Kinesis::Errors::InternalFailure").once
+        expect(Rails.logger).to receive(:error).with('Kinesis Error - Server Error occurred - Aws::Kinesis::Errors::InternalFailure').once
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
       end
     end
@@ -127,43 +127,43 @@ RSpec.describe Journaled::Delivery do
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
         expect(Rails.logger).to receive(:error).with(
-          "Kinesis Error - Networking Error occurred - Seahorse::Client::NetworkingError",
+          'Kinesis Error - Networking Error occurred - Seahorse::Client::NetworkingError',
         ).once
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
       end
     end
   end
 
-  describe "#stream_name" do
-    context "when app_name is unspecified" do
+  describe '#stream_name' do
+    context 'when app_name is unspecified' do
       subject { described_class.new serialized_event: serialized_event, partition_key: partition_key, app_name: nil }
 
-      it "is fetched from a prefixed ENV var if specified" do
-        allow(ENV).to receive(:fetch).and_return("expected_stream_name")
-        expect(subject.stream_name).to eq("expected_stream_name")
-        expect(ENV).to have_received(:fetch).with("JOURNALED_STREAM_NAME")
+      it 'is fetched from a prefixed ENV var if specified' do
+        allow(ENV).to receive(:fetch).and_return('expected_stream_name')
+        expect(subject.stream_name).to eq('expected_stream_name')
+        expect(ENV).to have_received(:fetch).with('JOURNALED_STREAM_NAME')
       end
     end
 
-    context "when app_name is specified" do
-      subject { described_class.new serialized_event: serialized_event, partition_key: partition_key, app_name: "my_funky_app_name" }
+    context 'when app_name is specified' do
+      subject { described_class.new serialized_event: serialized_event, partition_key: partition_key, app_name: 'my_funky_app_name' }
 
-      it "is fetched from a prefixed ENV var if specified" do
-        allow(ENV).to receive(:fetch).and_return("expected_stream_name")
-        expect(subject.stream_name).to eq("expected_stream_name")
-        expect(ENV).to have_received(:fetch).with("MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME")
+      it 'is fetched from a prefixed ENV var if specified' do
+        allow(ENV).to receive(:fetch).and_return('expected_stream_name')
+        expect(subject.stream_name).to eq('expected_stream_name')
+        expect(ENV).to have_received(:fetch).with('MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME')
       end
     end
   end
 
-  describe "#kinesis_client_config" do
-    it "is in us-east-1 by default" do
+  describe '#kinesis_client_config' do
+    it 'is in us-east-1 by default' do
       with_env(AWS_DEFAULT_REGION: nil) do
         expect(subject.kinesis_client_config).to include(region: 'us-east-1')
       end
     end
 
-    it "respects AWS_DEFAULT_REGION env var" do
+    it 'respects AWS_DEFAULT_REGION env var' do
       with_env(AWS_DEFAULT_REGION: 'us-west-2') do
         expect(subject.kinesis_client_config).to include(region: 'us-west-2')
       end
@@ -173,14 +173,14 @@ RSpec.describe Journaled::Delivery do
       expect(subject.kinesis_client_config).to include(retry_limit: 0)
     end
 
-    it "provides no AWS credentials by default" do
+    it 'provides no AWS credentials by default' do
       with_env(RUBY_AWS_ACCESS_KEY_ID: nil, RUBY_AWS_SECRET_ACCESS_KEY: nil) do
         expect(subject.kinesis_client_config).not_to have_key(:access_key_id)
         expect(subject.kinesis_client_config).not_to have_key(:secret_access_key)
       end
     end
 
-    it "will use legacy credentials if specified" do
+    it 'will use legacy credentials if specified' do
       with_env(RUBY_AWS_ACCESS_KEY_ID: 'key_id', RUBY_AWS_SECRET_ACCESS_KEY: 'secret') do
         expect(subject.kinesis_client_config).to include(access_key_id: 'key_id', secret_access_key: 'secret')
       end

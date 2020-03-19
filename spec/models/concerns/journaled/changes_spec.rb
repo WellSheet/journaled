@@ -16,7 +16,7 @@ RSpec.describe Journaled::Changes do
 
       def self.after_save(opts, &hook)
         # This is a back-door assertion to prevent regressions in the module's hook definition behavior
-        raise "expected `unless: :saved_change_to_id?`" unless opts[:unless] == :saved_change_to_id?
+        raise 'expected `unless: :saved_change_to_id?`' unless opts[:unless] == :saved_change_to_id?
 
         after_save_hooks << hook
       end
@@ -54,7 +54,7 @@ RSpec.describe Journaled::Changes do
     end
   end
 
-  it "can be asserted on with our matcher" do
+  it 'can be asserted on with our matcher' do
     expect(klass).to journal_changes_to(:my_heart, as: :change_of_heart)
 
     expect(klass).not_to journal_changes_to(:foobaloo, as: :an_event_to_remember)
@@ -68,25 +68,25 @@ RSpec.describe Journaled::Changes do
     }.to raise_error(/> not to journal changes to :my_heart as :change_of_heart/)
   end
 
-  it "has a single change definition" do
+  it 'has a single change definition' do
     expect(klass._journaled_change_definitions.length).to eq 1
   end
 
-  it "journals create events on create" do
+  it 'journals create events on create' do
     subject.trigger_after_create_hooks
 
     expect(change_writer).to have_received(:create)
     expect(Journaled::ChangeWriter).to have_received(:new)
   end
 
-  it "journals update events on save" do
+  it 'journals update events on save' do
     subject.trigger_after_save_hooks
 
     expect(change_writer).to have_received(:update)
     expect(Journaled::ChangeWriter).to have_received(:new)
   end
 
-  it "journals delete events on destroy" do
+  it 'journals delete events on destroy' do
     subject.trigger_after_destroy_hooks
 
     expect(change_writer).to have_received(:delete)
