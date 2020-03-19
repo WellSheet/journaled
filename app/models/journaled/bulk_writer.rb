@@ -2,7 +2,7 @@ class Journaled::BulkWriter
   EVENTS_PER_DELIVERY = 500
 
   def initialize(journaled_events:, app_name:, enqueue_opts: {})
-    @journaled_events = journaled_events.lazy
+    @journaled_events = journaled_events
     @app_name = app_name
     @enqueue_opts = enqueue_opts
   end
