@@ -1,9 +1,9 @@
-require "aws-sdk-resources"
-require "delayed_job"
-require "json-schema"
-require "request_store"
+require 'aws-sdk-resources'
+require 'delayed_job'
+require 'json-schema'
+require 'request_store'
 
-require "journaled/engine"
+require 'journaled/engine'
 require 'journaled/enqueue'
 require 'journaled/stream_name.rb'
 

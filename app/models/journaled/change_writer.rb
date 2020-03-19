@@ -9,15 +9,15 @@ class Journaled::ChangeWriter
   end
 
   def create
-    journaled_change_for("create", relevant_attributes).journal!
+    journaled_change_for('create', relevant_attributes).journal!
   end
 
   def update
-    journaled_change_for("update", relevant_changed_attributes).journal! if relevant_changed_attributes.present?
+    journaled_change_for('update', relevant_changed_attributes).journal! if relevant_changed_attributes.present?
   end
 
   def delete
-    journaled_change_for("delete", relevant_unperturbed_attributes).journal!
+    journaled_change_for('delete', relevant_unperturbed_attributes).journal!
   end
 
   def journaled_change_for(database_operation, changes)

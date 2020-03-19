@@ -71,8 +71,8 @@ RSpec.describe Journaled::Event do
     end
 
     it 'returns the journaled default if set' do
-      allow(Journaled).to receive(:default_app_name).and_return("my_app")
-      expect(sample_journaled_event.journaled_app_name).to eq("my_app")
+      allow(Journaled).to receive(:default_app_name).and_return('my_app')
+      expect(sample_journaled_event.journaled_app_name).to eq('my_app')
     end
   end
 
