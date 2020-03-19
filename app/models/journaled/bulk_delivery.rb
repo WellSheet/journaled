@@ -20,7 +20,14 @@ class Journaled::BulkDelivery
 
   attr_reader :records, :app_name
 
-  def aws_records
+  def request
+    {
+      stream_name: Journaled.stream_name_for_app(app_name),
+      records: kinesis_records,
+    }
+  end
+
+  def kinesis_records
     records.map do |event, partition_key|
       {
         data: event,
@@ -29,15 +36,8 @@ class Journaled::BulkDelivery
     end
   end
 
-  def request
-    {
-      stream_name: Journaled.stream_name_for_app(app_name),
-      records: aws_records,
-    }
-  end
-
   def kinesis_client
-    Journaled::Client.generate
+    Journaled::KinesisClient.generate
   end
 
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError

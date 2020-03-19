@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Journaled::Client do
+RSpec.describe Journaled::KinesisClient do
   describe ".generate" do
     context 'when JOURNALED_IAM_ROLE_ARN is defined' do
       let(:aws_sts_client) { Aws::STS::Client.new(stub_responses: true) }

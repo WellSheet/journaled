@@ -17,7 +17,7 @@ RSpec.describe Journaled::Delivery do
 
     before do
       kinesis_client.stub_responses(:put_record, return_status_body)
-      allow(Journaled::Client).to receive(:generate).and_return kinesis_client
+      allow(Journaled::KinesisClient).to receive(:generate).and_return kinesis_client
 
       allow(Journaled).to receive(:enabled?).and_return(true)
     end
