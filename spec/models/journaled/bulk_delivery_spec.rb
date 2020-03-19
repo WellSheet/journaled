@@ -77,7 +77,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
-        expect(Rails.logger).to receive(:error).with("Kinesis Error - Server Error occurred - Aws::Kinesis::Errors::InternalFailure").once
+        expect(Rails.logger).to receive(:error).with('Kinesis Error - Server Error occurred - Aws::Kinesis::Errors::InternalFailure').once
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
       end
     end
@@ -121,7 +121,7 @@ RSpec.describe Journaled::BulkDelivery do
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
         expect(Rails.logger).to receive(:error).with(
-          "Kinesis Error - Networking Error occurred - Seahorse::Client::NetworkingError",
+          'Kinesis Error - Networking Error occurred - Seahorse::Client::NetworkingError',
         ).once
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
       end

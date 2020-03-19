@@ -46,7 +46,7 @@ class Journaled::KinesisClient
       Aws::AssumeRoleCredentials.new(
         client: sts_client,
         role_arn: ENV.fetch('JOURNALED_IAM_ROLE_ARN'),
-        role_session_name: "JournaledAssumeRoleAccess",
+        role_session_name: 'JournaledAssumeRoleAccess',
       )
     end
   end

@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Journaled::Serializer do
-  let(:schema_path) { Journaled::Engine.root.join "journaled_schemas/fake_schema_name.json" }
+  let(:schema_path) { Journaled::Engine.root.join 'journaled_schemas/fake_schema_name.json' }
   let(:schema_file_contents) do
     <<-JSON
           {

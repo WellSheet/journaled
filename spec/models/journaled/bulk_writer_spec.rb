@@ -12,7 +12,7 @@ RSpec.describe Journaled::BulkWriter do
     end
 
     let(:journaled_events) { [journaled_event_1, journaled_event_2] }
-    subject { described_class.new journaled_events: journaled_events, app_name: "my_app", enqueue_opts: enqueue_opts }
+    subject { described_class.new journaled_events: journaled_events, app_name: 'my_app', enqueue_opts: enqueue_opts }
 
     let(:stub_serializer_1) do
       instance_double(
