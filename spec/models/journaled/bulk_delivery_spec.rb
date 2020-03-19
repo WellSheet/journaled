@@ -114,7 +114,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
     end
 
-    context 'when the request timesout' do
+    context 'when the request times out' do
       before do
         kinesis_client.stub_responses(:put_records, Seahorse::Client::NetworkingError.new(Timeout::Error.new))
       end

@@ -23,7 +23,7 @@ RSpec.describe Journaled::Writer do
       with_jobs_delayed { example.run }
     end
 
-    context 'when the journaled event does NOT serializer correctly' do
+    context 'when the journaled event does NOT serialize correctly' do
       let(:stub_serializer) { instance_double(Journaled::Serializer, serialize!: true, serialized_event: nil) }
       before do
         allow(stub_serializer).to receive(:serialize!).and_raise('An enqueued event must respond to: journaled_attributes')
