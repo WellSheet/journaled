@@ -25,7 +25,7 @@ RSpec.describe Journaled::JsonSchemaModel::Validator do
     context 'when the schema name matches a schema in journaled' do
       let(:schema_name) { :fake_json_schema_name }
       let(:gem_path) { Journaled::Engine.root.join "journaled_schemas/#{schema_name}.json" }
-      let(:schema_path) { Rails.root.join "journaled_schemas", "#{schema_name}.json" }
+      let(:schema_path) { Rails.root.join 'journaled_schemas', "#{schema_name}.json" }
       let(:schema_file_contents) do
         <<-JSON
           {
