@@ -1,32 +1,66 @@
 require 'rails_helper'
 
-RSpec.describe Journaled::Delivery do
+RSpec.describe Journaled::BulkDelivery do
   let(:stream_name) { 'test_events' }
-  let(:partition_key) { 'fake_partition_key' }
-  let(:serialized_event) { '{"foo":"bar"}' }
+  let(:partition_key_1) { 'fake_partition_key' }
+  let(:serialized_event_1) { '{"foo":"bar"}' }
+  let(:partition_key_2) { 'different_partition_key' }
+  let(:serialized_event_2) { '{"other-key":"bar"}' }
   let(:kinesis_client) { Aws::Kinesis::Client.new(stub_responses: true) }
 
   around do |example|
     with_env(JOURNALED_STREAM_NAME: stream_name) { example.run }
   end
 
-  subject { described_class.new serialized_event: serialized_event, partition_key: partition_key, app_name: nil }
+  let(:serialized_events) { [serialized_event_1, serialized_event_2] }
+  let(:partition_keys) { [partition_key_1, partition_key_2] }
+  let(:records) do
+    [
+      [serialized_event_1, partition_key_1],
+      [serialized_event_2, partition_key_2],
+    ]
+  end
+  subject { described_class.new records: records, app_name: nil }
 
   describe '#perform' do
-    let(:return_status_body) { { shard_id: '101', sequence_number: '101123' } }
+    let(:return_status_body) do
+      {
+        records: [
+          { shard_id: '101', sequence_number: '101123' },
+          { shard_id: '101', sequence_number: '101124' },
+        ],
+      }
+    end
 
     before do
-      kinesis_client.stub_responses(:put_record, return_status_body)
+      kinesis_client.stub_responses(:put_records, return_status_body)
       allow(Journaled::KinesisClient).to receive(:generate).and_return kinesis_client
 
       allow(Journaled).to receive(:enabled?).and_return(true)
     end
 
-    it 'makes requests to AWS to put the event on the Kinesis with the correct body' do
-      event = subject.perform
+    it 'makes requests to AWS to put the events on the Kinesis with the correct bodies' do
+      allow(kinesis_client).to receive(:put_records).and_call_original
+      response = subject.perform
 
+      event = response.records.first
       expect(event.shard_id).to eq '101'
       expect(event.sequence_number).to eq '101123'
+
+      expect(kinesis_client).to have_received(:put_records)
+        .with(
+          stream_name: 'test_events',
+          records: [
+            {
+              data: '{"foo":"bar"}',
+              partition_key: 'fake_partition_key',
+            },
+            {
+              data: '{"other-key":"bar"}',
+              partition_key: 'different_partition_key',
+            },
+          ],
+        )
     end
 
     context 'when the stream name env var is NOT set' do
@@ -39,7 +73,7 @@ RSpec.describe Journaled::Delivery do
 
     context 'when Amazon responds with an InternalFailure' do
       before do
-        kinesis_client.stub_responses(:put_record, 'InternalFailure')
+        kinesis_client.stub_responses(:put_records, 'InternalFailure')
       end
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
@@ -50,7 +84,7 @@ RSpec.describe Journaled::Delivery do
 
     context 'when Amazon responds with a ServiceUnavailable' do
       before do
-        kinesis_client.stub_responses(:put_record, 'ServiceUnavailable')
+        kinesis_client.stub_responses(:put_records, 'ServiceUnavailable')
       end
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
@@ -62,7 +96,7 @@ RSpec.describe Journaled::Delivery do
 
     context 'when we receive a 504 Gateway timeout' do
       before do
-        kinesis_client.stub_responses(:put_record, 'Aws::Kinesis::Errors::ServiceError')
+        kinesis_client.stub_responses(:put_records, 'Aws::Kinesis::Errors::ServiceError')
       end
 
       it 'raises an error that subclasses Aws::Kinesis::Errors::ServiceError' do
@@ -72,7 +106,7 @@ RSpec.describe Journaled::Delivery do
 
     context 'when the IAM user does not have permission to put_record to the specified stream' do
       before do
-        kinesis_client.stub_responses(:put_record, 'AccessDeniedException')
+        kinesis_client.stub_responses(:put_records, 'AccessDeniedException')
       end
 
       it 'raises an AccessDeniedException error' do
@@ -80,9 +114,9 @@ RSpec.describe Journaled::Delivery do
       end
     end
 
-    context 'when the request timesout' do
+    context 'when the request times out' do
       before do
-        kinesis_client.stub_responses(:put_record, Seahorse::Client::NetworkingError.new(Timeout::Error.new))
+        kinesis_client.stub_responses(:put_records, Seahorse::Client::NetworkingError.new(Timeout::Error.new))
       end
 
       it 'catches the error and re-raises a subclass of NotTrulyExceptionalError and logs about the failure' do
