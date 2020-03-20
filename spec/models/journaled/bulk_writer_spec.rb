@@ -83,6 +83,20 @@ RSpec.describe Journaled::BulkWriter do
           expect(Journaled::BulkDelivery).to have_received(:new)
             .with(app_name: 'my_app', records: [%w(FAKE_SERIALIZED_EVENT_2 key_2)]).once
         end
+
+        context 'when a per job delay is provided' do
+          let(:per_job_delay) { 1.minute }
+          subject { described_class.new journaled_events: journaled_events, app_name: 'my_app', per_job_delay: per_job_delay }
+
+          it 'enqueues the jobs with spaced out run_at' do
+            expect { subject.journal! }.to change {
+              Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').count
+            }.from(0).to(2)
+            first_job, second_job = Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').order(run_at: :asc)
+
+            expect(second_job.run_at - first_job.run_at).to eq 1.minute
+          end
+        end
       end
 
       context 'when there is no job priority specified in the enqueue opts' do
