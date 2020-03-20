@@ -7,7 +7,7 @@ module Journaled
     private
 
     def delayed_job_enqueue(*args, **opts)
-      Delayed::Job.enqueue(*args, **opts.with_defaults(priority: Journaled.job_priority))
+      Delayed::Job.enqueue(*args, **opts.reverse_merge(priority: Journaled.job_priority))
     end
   end
 end
