@@ -17,7 +17,8 @@ Gem::Specification.new do |s|
   s.files = Dir['{app,config,lib,journaled_schemas}/**/*', 'LICENSE', 'Rakefile', 'README.md']
   s.test_files = Dir['spec/**/*']
 
-  s.add_dependency 'aws-sdk-resources', '< 4'
+  s.add_dependency 'aws-sdk-core', '< 4'
+  s.add_dependency 'aws-sdk-kinesis', '< 4'
   s.add_dependency 'delayed_job'
   s.add_dependency 'json-schema'
   s.add_dependency 'rails', '>= 5.1', '< 7.0'
