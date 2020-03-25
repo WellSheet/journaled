@@ -126,5 +126,29 @@ RSpec.describe Journaled::BulkDelivery do
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
       end
     end
+
+    context 'when one of the events fails' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 1,
+          records: [
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+            { shard_id: '101', sequence_number: '101124' },
+          ],
+        }
+      end
+
+      it 're-enqueues the failing records' do
+        expect { subject.perform }.to change { Delayed::Job.count }.from(0).to(1)
+
+        job = Delayed::Job.last
+        records = job.payload_object.send(:records)
+        expect(records.count).to eq 1
+        expect(records.first).to eq [serialized_event_1, partition_key_1]
+      end
+    end
   end
 end
