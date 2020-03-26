@@ -41,11 +41,7 @@ RSpec.describe Journaled::BulkDelivery do
 
     it 'makes requests to AWS to put the events on the Kinesis with the correct bodies' do
       allow(kinesis_client).to receive(:put_records).and_call_original
-      response = subject.perform
-
-      event = response.records.first
-      expect(event.shard_id).to eq '101'
-      expect(event.sequence_number).to eq '101123'
+      subject.perform
 
       expect(kinesis_client).to have_received(:put_records)
         .with(
@@ -153,7 +149,7 @@ RSpec.describe Journaled::BulkDelivery do
       context 'when the number of failing records conflicts with the given count' do
         let(:return_status_body) do
           {
-            failed_record_count: 1,
+            failed_record_count: 2,
             records: [
               {
                 error_code: 'ProvisionedThroughputExceededException',

@@ -45,10 +45,11 @@ class Journaled::BulkDelivery
     records_with_responses = records.zip(response.records)
     errored_records = records_with_responses.select { |_record, resp| resp.error_code.present? }.map(&:first)
 
-    raise 'FailedRecordCount differs from count of records that have errors' unless errored_records.count == response.failed_record_count
+    failed_record_count = response.failed_record_count || 0
+    raise 'FailedRecordCount differs from count of records that have errors' unless errored_records.count == failed_record_count
     raise 'ALL Records failed to be added to the Kinesis steam' if errored_records.count == records.count
 
-    Delayed::Job.enqueue self.class.new(records: y, app_name: app_name) # This won't have the same enqueue opts as the orig job
+    Delayed::Job.enqueue self.class.new(records: errored_records, app_name: app_name)
   end
 
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
