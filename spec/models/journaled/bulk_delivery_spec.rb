@@ -149,6 +149,47 @@ RSpec.describe Journaled::BulkDelivery do
         expect(records.count).to eq 1
         expect(records.first).to eq [serialized_event_1, partition_key_1]
       end
+
+      context 'when the number of failing records conflicts with the given count' do
+        let(:return_status_body) do
+          {
+            failed_record_count: 1,
+            records: [
+              {
+                error_code: 'ProvisionedThroughputExceededException',
+                error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+              },
+              { shard_id: '101', sequence_number: '101124' },
+            ],
+          }
+        end
+
+        it 'raises' do
+          expect { subject.perform }.to raise_error('FailedRecordCount differs from count of records that have errors')
+        end
+      end
+    end
+
+    context 'when ALL of the events fails' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 2,
+          records: [
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+          ],
+        }
+      end
+
+      it 'raises causing the job to reenqueue' do
+        expect { subject.perform }.to raise_error('ALL Records failed to be added to the Kinesis steam')
+      end
     end
   end
 end
