@@ -41,11 +41,7 @@ RSpec.describe Journaled::BulkDelivery do
 
     it 'makes requests to AWS to put the events on the Kinesis with the correct bodies' do
       allow(kinesis_client).to receive(:put_records).and_call_original
-      response = subject.perform
-
-      event = response.records.first
-      expect(event.shard_id).to eq '101'
-      expect(event.sequence_number).to eq '101123'
+      expect { subject.perform }.not_to change { Delayed::Job.count }
 
       expect(kinesis_client).to have_received(:put_records)
         .with(
@@ -124,6 +120,71 @@ RSpec.describe Journaled::BulkDelivery do
           'Kinesis Error - Networking Error occurred - Seahorse::Client::NetworkingError',
         ).once
         expect { subject.perform }.to raise_error described_class::KinesisTemporaryFailure
+      end
+    end
+
+    context 'when one of the events fails' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 1,
+          records: [
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+            { shard_id: '101', sequence_number: '101124' },
+          ],
+        }
+      end
+
+      it 'requeues the failing records' do
+        expect { subject.perform }.to change { Delayed::Job.count }.from(0).to(1)
+
+        job = Delayed::Job.last
+        records = job.payload_object.send(:records)
+        expect(records.count).to eq 1
+        expect(records.first).to eq [serialized_event_1, partition_key_1]
+      end
+
+      context 'when the number of failing records conflicts with the given count' do
+        let(:return_status_body) do
+          {
+            failed_record_count: 2,
+            records: [
+              {
+                error_code: 'ProvisionedThroughputExceededException',
+                error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+              },
+              { shard_id: '101', sequence_number: '101124' },
+            ],
+          }
+        end
+
+        it 'raises' do
+          expect { subject.perform }.to raise_error('FailedRecordCount differs from count of records that have errors')
+        end
+      end
+    end
+
+    context 'when ALL of the events fail' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 2,
+          records: [
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+            },
+          ],
+        }
+      end
+
+      it 'raises' do
+        expect { subject.perform }.to raise_error('ALL Records failed to be added to the Kinesis steam')
       end
     end
   end

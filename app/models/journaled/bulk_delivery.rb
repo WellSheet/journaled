@@ -7,7 +7,8 @@ class Journaled::BulkDelivery
   def perform
     return unless Journaled.enabled?
 
-    kinesis_client.put_records request
+    response = kinesis_client.put_records request
+    requeue_failed_records!(response)
   rescue Aws::Kinesis::Errors::InternalFailure, Aws::Kinesis::Errors::ServiceUnavailable, Aws::Kinesis::Errors::Http503Error => e
     Rails.logger.error "Kinesis Error - Server Error occurred - #{e.class}"
     raise KinesisTemporaryFailure
@@ -38,6 +39,17 @@ class Journaled::BulkDelivery
 
   def kinesis_client
     Journaled::KinesisClient.generate
+  end
+
+  def requeue_failed_records!(response) # rubocop:disable Metrics/AbcSize
+    records_with_responses = records.zip(response.records)
+    errored_records = records_with_responses.select { |_record, resp| resp.error_code.present? }.map(&:first)
+
+    failed_record_count = response.failed_record_count || 0
+    raise 'FailedRecordCount differs from count of records that have errors' unless errored_records.count == failed_record_count
+    raise 'ALL Records failed to be added to the Kinesis steam' if errored_records.count == records.count
+
+    Delayed::Job.enqueue self.class.new(records: errored_records, app_name: app_name) if errored_records.any?
   end
 
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
