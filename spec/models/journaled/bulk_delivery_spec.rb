@@ -166,7 +166,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
     end
 
-    context 'when ALL of the events fails' do
+    context 'when ALL of the events fail' do
       let(:return_status_body) do
         {
           failed_record_count: 2,
