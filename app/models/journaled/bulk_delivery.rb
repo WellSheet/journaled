@@ -8,7 +8,7 @@ class Journaled::BulkDelivery
     return unless Journaled.enabled?
 
     response = kinesis_client.put_records request
-    reenqueue_failed_records!(response)
+    requeue_failed_records!(response)
   rescue Aws::Kinesis::Errors::InternalFailure, Aws::Kinesis::Errors::ServiceUnavailable, Aws::Kinesis::Errors::Http503Error => e
     Rails.logger.error "Kinesis Error - Server Error occurred - #{e.class}"
     raise KinesisTemporaryFailure
@@ -41,7 +41,7 @@ class Journaled::BulkDelivery
     Journaled::KinesisClient.generate
   end
 
-  def reenqueue_failed_records!(response) # rubocop:disable Metrics/AbcSize
+  def requeue_failed_records!(response) # rubocop:disable Metrics/AbcSize
     records_with_responses = records.zip(response.records)
     errored_records = records_with_responses.select { |_record, resp| resp.error_code.present? }.map(&:first)
 

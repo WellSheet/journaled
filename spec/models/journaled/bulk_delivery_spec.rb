@@ -137,7 +137,7 @@ RSpec.describe Journaled::BulkDelivery do
         }
       end
 
-      it 're-enqueues the failing records' do
+      it 'requeues the failing records' do
         expect { subject.perform }.to change { Delayed::Job.count }.from(0).to(1)
 
         job = Delayed::Job.last
@@ -183,7 +183,7 @@ RSpec.describe Journaled::BulkDelivery do
         }
       end
 
-      it 'raises causing the job to reenqueue' do
+      it 'raises' do
         expect { subject.perform }.to raise_error('ALL Records failed to be added to the Kinesis steam')
       end
     end
