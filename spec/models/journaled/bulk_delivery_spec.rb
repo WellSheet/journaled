@@ -41,7 +41,7 @@ RSpec.describe Journaled::BulkDelivery do
 
     it 'makes requests to AWS to put the events on the Kinesis with the correct bodies' do
       allow(kinesis_client).to receive(:put_records).and_call_original
-      subject.perform
+      expect { subject.perform }.not_to change { Delayed::Job.count }
 
       expect(kinesis_client).to have_received(:put_records)
         .with(
