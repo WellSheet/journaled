@@ -166,7 +166,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
     end
 
-    context 'when ALL of the events fail with the same error code' do
+    context 'when ALL of the events fail with the rate limiting errors' do
       let(:return_status_body) do
         {
           failed_record_count: 2,
@@ -177,14 +177,76 @@ RSpec.describe Journaled::BulkDelivery do
             },
             {
               error_code: 'ProvisionedThroughputExceededException',
-              error_message: 'Rate exceeded for shard shardId-000000000001 in stream exampleStreamName under account 111111111111.',
+              error_message: 'Rate exceeded for shard shardId-000000000002 in stream exampleStreamName under account 111111111111.',
             },
           ],
         }
       end
 
-      it 'raises' do
-        expect { subject.perform }.to raise_error(described_class::KinesisBulkRateLimitFailure, /Rate exceeded for shard shardId\-000000000001/)
+      it 'raises with the specific errors in the message' do
+        expect { subject.perform }
+          .to raise_error(
+            described_class::KinesisBulkRateLimitFailure,
+            /Rate exceeded for shard shardId\-000000000001.*Rate exceeded for shard shardId-000000000002/m,
+        )
+      end
+    end
+
+    context 'when ALL of the events fail with the internal errors' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 2,
+          records: [
+            {
+              error_code: 'InternalFailure',
+              error_message: 'Some message from AWS',
+            },
+            {
+              error_code: 'InternalFailure',
+              error_message: 'Something else AWS says',
+            },
+          ],
+        }
+      end
+
+      it 'raises with the specific errors in the message' do
+        expect { subject.perform }
+          .to raise_error(
+            described_class::KinesisBulkInternalErrorFailure,
+            "Some message from AWS\nSomething else AWS says",
+        )
+      end
+    end
+
+    context 'when ALL of the events fail but contain different errors' do
+      let(:return_status_body) do
+        {
+          failed_record_count: 2,
+          records: [
+            {
+              error_code: 'InternalFailure',
+              error_message: 'Some message from AWS',
+            },
+            {
+              error_code: 'ProvisionedThroughputExceededException',
+              error_message: 'Rate exceeded for shard shardId-000000000002 in stream exampleStreamName under account 111111111111.',
+            },
+          ],
+        }
+      end
+
+      it 'raises with the specific errors in the message' do
+        expect { subject.perform }
+          .to raise_error(
+            described_class::MultipleErrorsFailure,
+            <<~MSG.strip,
+              Journaled::BulkDelivery::KinesisBulkInternalErrorFailure
+              Some message from AWS
+
+              Journaled::BulkDelivery::KinesisBulkRateLimitFailure
+              Rate exceeded for shard shardId-000000000002 in stream exampleStreamName under account 111111111111.
+            MSG
+        )
       end
     end
   end

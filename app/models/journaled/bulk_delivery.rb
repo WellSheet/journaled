@@ -50,15 +50,24 @@ class Journaled::BulkDelivery
     raise 'FailedRecordCount differs from count of records that have errors' unless errored_records.count == failed_record_count
 
     if errored_records.count == records.count
-      x = errored_records_with_responses.map(&:second).group_by(&:error_code)
+      errors = errored_records_with_responses.map(&:second)
+      grouped_errors = errors.group_by(&:error_code).to_a
 
-      if x.count == 1 && x.first.first == 'ProvisionedThroughputExceededException'
-        y = x.to_a.first
+      error_objs = grouped_errors.map do |error_code, r|
+        klass = if error_code == 'ProvisionedThroughputExceededException'
+                  KinesisBulkRateLimitFailure
+                else
+                  KinesisBulkInternalErrorFailure
+                end
 
-        raise KinesisBulkRateLimitFailure, y.second.map(&:error_message).join("\n")
+        klass.new(r.map(&:error_message).join("\n"))
       end
 
-      raise 'ALL Records failed to be added to the Kinesis steam'
+      if error_objs.count == 1
+        raise(error_objs.first)
+      else
+        raise MultipleErrorsFailure, error_objs
+      end
     end
 
     Delayed::Job.enqueue self.class.new(records: errored_records, app_name: app_name) if errored_records.any?
@@ -67,11 +76,15 @@ class Journaled::BulkDelivery
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
   end
 
-  class KinesisBulkRateLimitFailure < Journaled::NotTrulyExceptionalError
+  class KinesisBulkInternalErrorFailure < Journaled::NotTrulyExceptionalError
+  end
+  class KinesisBulkRateLimitFailure < StandardError
   end
 
-  module Errors; end
-
-  class WrappedErrors < StandardError
+  class MultipleErrorsFailure < StandardError
+    def initialize(errors)
+      msgs = errors.map { |e| "#{e.class}\n#{e.message}" }
+      super(msgs.join("\n\n"))
+    end
   end
 end
