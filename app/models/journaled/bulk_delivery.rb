@@ -55,14 +55,14 @@ class Journaled::BulkDelivery
     end
 
     def handle!
-      handle_failed_record_count!
+      handle_failed_record_count_mismatch!
       handle_all_records_failed!
       renenqueue_failed_records!
     end
 
     private
 
-    def handle_failed_record_count!
+    def handle_failed_record_count_mismatch!
       failed_record_count = response.failed_record_count || 0
 
       unless errored_records_with_responses.count == failed_record_count
