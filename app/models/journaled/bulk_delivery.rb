@@ -43,15 +43,35 @@ class Journaled::BulkDelivery
 
   def requeue_failed_records!(response) # rubocop:disable Metrics/AbcSize
     records_with_responses = records.zip(response.records)
-    errored_records = records_with_responses.select { |_record, resp| resp.error_code.present? }.map(&:first)
+    errored_records_with_responses = records_with_responses.select { |_record, resp| resp.error_code.present? }
+    errored_records = errored_records_with_responses.map(&:first)
 
     failed_record_count = response.failed_record_count || 0
     raise 'FailedRecordCount differs from count of records that have errors' unless errored_records.count == failed_record_count
-    raise 'ALL Records failed to be added to the Kinesis steam' if errored_records.count == records.count
+
+    if errored_records.count == records.count
+      x = errored_records_with_responses.map(&:second).group_by(&:error_code)
+
+      if x.count == 1 && x.first.first == 'ProvisionedThroughputExceededException'
+        y = x.to_a.first
+
+        raise KinesisBulkRateLimitFailure, y.second.map(&:error_message).join("\n")
+      end
+
+      raise 'ALL Records failed to be added to the Kinesis steam'
+    end
 
     Delayed::Job.enqueue self.class.new(records: errored_records, app_name: app_name) if errored_records.any?
   end
 
   class KinesisTemporaryFailure < Journaled::NotTrulyExceptionalError
+  end
+
+  class KinesisBulkRateLimitFailure < Journaled::NotTrulyExceptionalError
+  end
+
+  module Errors; end
+
+  class WrappedErrors < StandardError
   end
 end

@@ -166,7 +166,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
     end
 
-    context 'when ALL of the events fail' do
+    context 'when ALL of the events fail with the same error code' do
       let(:return_status_body) do
         {
           failed_record_count: 2,
@@ -184,7 +184,7 @@ RSpec.describe Journaled::BulkDelivery do
       end
 
       it 'raises' do
-        expect { subject.perform }.to raise_error('ALL Records failed to be added to the Kinesis steam')
+        expect { subject.perform }.to raise_error(described_class::KinesisBulkRateLimitFailure, /Rate exceeded for shard shardId\-000000000001/)
       end
     end
   end
