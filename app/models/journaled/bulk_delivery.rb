@@ -88,8 +88,8 @@ class Journaled::BulkDelivery
       @error_objects ||= begin
                            grouped_errors = errors.group_by(&:error_code).to_a
 
-                           grouped_errors.map do |error_code, r|
-                             error_class_for_code(error_code).new(r.map(&:error_message).join("\n"))
+                           grouped_errors.map do |error_code, group|
+                             error_class_for_code(error_code).new(group.map(&:error_message).join("\n"))
                            end
                          end
     end
