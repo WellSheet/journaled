@@ -65,6 +65,21 @@ RSpec.describe Journaled::Writer do
         end
       end
 
+      context 'when no queue is provided in enqueue_opts' do
+        around do |example|
+          old_queue = Journaled.job_queue
+          Journaled.job_queue = 'custom-queue'
+          example.run
+          Journaled.job_queue = old_queue
+        end
+
+        it 'defaults to the global default' do
+          expect { subject.journal! }.to change {
+            Delayed::Job.where('handler like ?', '%Journaled::Delivery%').where(queue: 'custom-queue').count
+          }.from(0).to(1)
+        end
+      end
+
       context 'when there is a job priority specified in the enqueue opts' do
         let(:journaled_enqueue_opts) { { priority: 13 } }
 
