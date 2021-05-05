@@ -10,6 +10,7 @@ require 'journaled/stream_name.rb'
 module Journaled
   mattr_accessor :default_app_name
   mattr_accessor(:job_priority) { 20 }
+  mattr_accessor :job_queue
 
   def development_or_test?
     %w(development test).include?(Rails.env)
