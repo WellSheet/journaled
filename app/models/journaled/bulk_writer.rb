@@ -18,7 +18,7 @@ class Journaled::BulkWriter
 
   def enqueue_deliveries!
     now = Time.zone.now
-    serializers.each_slice(Journaled.bulk_delivery_limit).each_with_index.each do |serializers, index|
+    serializers.each_slice(Journaled.bulk_delivery_chunk_limit).each_with_index.each do |serializers, index|
       enqueue_delivery!(serializers, now + (index * per_job_delay))
     end
   end
