@@ -1,5 +1,5 @@
 class Journaled::BulkWriter
-  EVENTS_PER_DELIVERY = 500
+  MAX_PAYLOAD_SIZE_BYTES = 5_242_880
 
   def initialize(journaled_events:, app_name:, enqueue_opts: {}, per_job_delay: 0.seconds)
     @journaled_events = journaled_events
@@ -20,7 +20,8 @@ class Journaled::BulkWriter
 
   def enqueue_deliveries!
     now = Time.zone.now
-    serializers.each_slice(EVENTS_PER_DELIVERY).each_with_index.each do |serializers, index|
+
+    chunked_serializers.each_with_index.each do |serializers, index|
       enqueue_delivery!(serializers, now + (index * per_job_delay))
     end
   end
@@ -36,6 +37,28 @@ class Journaled::BulkWriter
       ),
       enqueue_opts.merge(run_at: run_at),
     )
+  end
+
+  def chunked_serializers
+    [].tap do |chunks|
+      current_chunk = []
+      chunk_size = 0
+
+      serializers.each do |serializer|
+        event_size = serializer.serialized_event.bytesize
+
+        if !current_chunk.empty? && chunk_size + event_size > MAX_PAYLOAD_SIZE_BYTES
+          chunks << current_chunk
+          current_chunk = []
+          chunk_size = 0
+        end
+
+        current_chunk << serializer
+        chunk_size += event_size
+      end
+
+      chunks << current_chunk
+    end
   end
 
   def serializers

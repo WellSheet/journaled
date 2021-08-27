@@ -65,9 +65,9 @@ RSpec.describe Journaled::BulkWriter do
         )
       end
 
-      context 'when the number of events passed in exceeds EVENTS_PER_DELIVERY' do
+      context 'when the serialized size of the events exceeds MAX_PAYLOAD_SIZE_BYTES' do
         before do
-          stub_const("#{described_class}::EVENTS_PER_DELIVERY", 1)
+          stub_const("#{described_class}::MAX_PAYLOAD_SIZE_BYTES", 30)
         end
 
         it 'creates multiple deliveries' do
@@ -96,6 +96,26 @@ RSpec.describe Journaled::BulkWriter do
 
             expect(second_job.run_at - first_job.run_at).to eq 1.minute
           end
+        end
+      end
+
+      context 'when the events all exceed MAX_PAYLOAD_SIZE_BYTES' do
+        before do
+          stub_const("#{described_class}::MAX_PAYLOAD_SIZE_BYTES", 1)
+        end
+
+        it 'enqueues them in individual deliveries' do
+          allow(Journaled::BulkDelivery).to receive(:new).and_call_original
+          expect { subject.journal! }.to change {
+            Delayed::Job.where('handler like ?', '%Journaled::BulkDelivery%').count
+          }.from(0).to(2)
+
+          expect(Journaled::BulkDelivery).to have_received(:new)
+            .with(hash_including(app_name: 'my_app')).twice
+          expect(Journaled::BulkDelivery).to have_received(:new)
+            .with(app_name: 'my_app', records: [%w(FAKE_SERIALIZED_EVENT_1 key_1)]).once
+          expect(Journaled::BulkDelivery).to have_received(:new)
+            .with(app_name: 'my_app', records: [%w(FAKE_SERIALIZED_EVENT_2 key_2)]).once
         end
       end
 
