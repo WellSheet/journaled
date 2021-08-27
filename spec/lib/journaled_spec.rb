@@ -65,4 +65,16 @@ RSpec.describe Journaled do
       expect(ENV).to have_received(:fetch).with('MY_FUNKY_APP_NAME_JOURNALED_STREAM_NAME')
     end
   end
+
+  describe '.bulk_delivery_chunk_limit' do
+    it 'returns a default when there is no environment variable' do
+      expect(described_class.bulk_delivery_chunk_limit).to eq 500
+    end
+
+    it 'returns the limit specified in the environment when set' do
+      with_env(JOURNALED_BULK_DELIVERY_CHUNK_LIMIT: 200) do
+        expect(described_class.bulk_delivery_chunk_limit).to eq 200
+      end
+    end
+  end
 end

@@ -67,7 +67,7 @@ RSpec.describe Journaled::BulkWriter do
 
       context 'when the number of events passed in exceeds EVENTS_PER_DELIVERY' do
         before do
-          stub_const("#{described_class}::EVENTS_PER_DELIVERY", 1)
+          allow(Journaled).to receive(:bulk_delivery_chunk_limit).and_return(1)
         end
 
         it 'creates multiple deliveries' do
