@@ -1,6 +1,4 @@
 class Journaled::BulkWriter
-  EVENTS_PER_DELIVERY = 500
-
   def initialize(journaled_events:, app_name:, enqueue_opts: {}, per_job_delay: 0.seconds)
     @journaled_events = journaled_events
     @app_name = app_name
@@ -20,7 +18,7 @@ class Journaled::BulkWriter
 
   def enqueue_deliveries!
     now = Time.zone.now
-    serializers.each_slice(EVENTS_PER_DELIVERY).each_with_index.each do |serializers, index|
+    serializers.each_slice(Journaled.bulk_delivery_limit).each_with_index.each do |serializers, index|
       enqueue_delivery!(serializers, now + (index * per_job_delay))
     end
   end

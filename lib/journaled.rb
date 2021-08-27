@@ -20,6 +20,10 @@ module Journaled
     !['0', 'false', false, 'f', ''].include?(ENV.fetch('JOURNALED_ENABLED', !development_or_test?))
   end
 
+  def bulk_delivery_limit
+    ENV.fetch('JOURNALED_BULK_DELIVERY_LIMIT', 500)
+  end
+
   def schema_providers
     @schema_providers ||= [Journaled::Engine, Rails]
   end
@@ -32,5 +36,5 @@ module Journaled
     Journaled::ActorUriProvider.instance.actor_uri
   end
 
-  module_function :development_or_test?, :enabled?, :schema_providers, :commit_hash, :actor_uri
+  module_function :development_or_test?, :enabled?, :bulk_delivery_limit, :schema_providers, :commit_hash, :actor_uri
 end
