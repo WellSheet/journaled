@@ -6,7 +6,7 @@ class Journaled::Writer
   def journal!
     serializer.serialize!
 
-    Journaled.enqueue!(journaled_delivery, journaled_enqueue_opts)
+    Journaled.enqueue!(journaled_delivery, **journaled_enqueue_opts)
   end
 
   private
