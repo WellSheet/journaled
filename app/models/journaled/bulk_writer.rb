@@ -32,7 +32,7 @@ class Journaled::BulkWriter
         records: serialized_events.zip(partition_keys),
         app_name: app_name,
       ),
-      enqueue_opts.merge(run_at: run_at),
+      **enqueue_opts.merge(run_at: run_at),
     )
   end
 

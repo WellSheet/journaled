@@ -1,7 +1,7 @@
 module Journaled
   class << self
-    def enqueue!(*args)
-      delayed_job_enqueue(*args)
+    def enqueue!(*args, **opts)
+      delayed_job_enqueue(*args, **opts)
     end
 
     private
