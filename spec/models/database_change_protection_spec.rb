@@ -58,13 +58,11 @@ if Rails::VERSION::MAJOR > 5 || (Rails::VERSION::MAJOR == 5 && Rails::VERSION::M
 
     describe 'an instance' do
       let(:job) do
-        module TestJob
+        Class.new do
           def perform
             'foo'
           end
-
-          module_function :perform
-        end
+        end.new
       end
 
       subject { journaled_class.enqueue(job) }
