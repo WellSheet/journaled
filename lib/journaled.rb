@@ -1,5 +1,5 @@
 require 'aws-sdk-kinesis'
-require 'delayed_job'
+require 'delayed'
 require 'json-schema'
 require 'request_store'
 
